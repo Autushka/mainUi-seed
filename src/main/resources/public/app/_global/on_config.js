@@ -6,7 +6,7 @@ function OnConfig($urlRouterProvider, $httpProvider, $injector, APP_SETTINGS, $t
     $urlRouterProvider.otherwise(function($injector) {
         var globalService = $injector.get('globalService');
         var state = $injector.get('$state');
-        var stateName = "app.documentsList";
+        var stateName = "app.tasksList";
         state.go(stateName);
     });
 
