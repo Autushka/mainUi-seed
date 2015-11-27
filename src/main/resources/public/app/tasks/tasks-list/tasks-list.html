@@ -1,53 +1,55 @@
-<div style="margin-top: 2rem; margin-bottom: 2rem;">Initial tasks list</div>
-<md-content layout="column">
-<md-virtual-repeat-container id="vertical-container" md-auto-shrink>
-	<div md-virtual-repeat="item in items"
-		class="repeated-item" style="padding: 0.2rem; padding-top: 0.8rem;" layout="column">
+<div style="height: 10%;" layout-align="end center" layout="row">
+	<md-button class="md-raised md-primary" ng-click="onAdd($event)">{{'add' | translate}}</md-button>
+</div>
+<md-content layout="column" style="height: 90%;">
 
+    <md-virtual-repeat-container id="vertical-container" style="border-top: 1px solid #ddd; border-bottom: 0px solid #ddd"; md-auto-shrink>
+      <div md-virtual-repeat="item in infiniteItems" md-on-demand
+          class="repeated-item" flex style="padding: 0.2rem; padding-top: 0.8rem; padding-left: 1rem; padding-right: 1rem;" layout="column">
 		<div layout="row">
 	
 
 			<div layout="column" flex=20>
-				<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;">Task</div>
-				<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;">In Progress</div>
-				<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;">Created 2015/01/01</div>
+				<div layout="row">
+					<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;" flex=10>Project:
+					</div>
+					<div flex=90>{{item.project}}</div>
+				</div>			
+				<div layout="row">
+					<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;" flex=10>Type:
+					</div>
+					<div flex=90>{{item.type}}</div>
+				</div>
+
+				<div layout="row">
+					<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;" flex=10>Status:
+					</div>
+					<div flex=90>{{item.status}}</div>
+				</div>
+
+				<div layout="row">
+					<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;" flex=10>Created:
+					</div>
+					<div flex=90>{{item.created}}</div>
+				</div>
 
 				<div layout="raw" style="margin-top:0.5rem; margin-left: -0.8rem;">
-				   <md-button class="md-icon-button launch" style="height: 35px; line-height: 35px; width: 35px; min-height: 35px;">
+				   <md-button class="md-icon-button launch" style="height: 35px; line-height: 35px; width: 35px; min-height: 35px;" ng-click="onEdit($event, $index)">
 				   	  <i class="fa fa-pencil-square-o" style="font-size: 15pt;"></i>
 				   </md-button>	
 
-				   <md-button class="md-icon-button launch" style="height: 35px; line-height: 35px; width: 35px; min-height: 35px;">
+				   <md-button class="md-icon-button launch" style="height: 35px; line-height: 35px; width: 35px; min-height: 35px;" ng-click="onDelete($index)">
 				   	  <i class="fa fa-times" style="font-size: 15pt;"></i>
 				   </md-button>			   		   
 				</div>				
 			</div>
 
-			<div flex=80>
-Сутнасць флэшмобу заключаецца ў тым, каб асцярожна выкінуць прэзерватыў з вадой на галаву так, каб ён не лопнуў. Напоўнены вадой прэзерватыў ператвараецца ў велізарную бурбалку, якая пры падзенні пад уласнай вагой імгненна абляпляе галаву і фіксуецца.
-
-Перад скіданнем контрацэптыва яго нават не завязваюць.
-
-Жарты жартамі, але галоўнае, што флэшмоб нагадвае пра важнасць адказнага стаўлення да сэксу і прафілактыкі захворванняў, што перадаюцца палавым шляхам.
-http://nn.by/?c=ar&i=160659
+			<div flex=80 style="padding-right: 2rem;">
+				{{item.description}}
 			</div>	
 		</div>
-
-
-
-<!-- 		<div layout="row" style="margin-bottom:0.5rem;">
-			<div style="font-weight: bold; margin-right: 5rem;">Task</div>
-			<div style="font-weight: bold; margin-right: 5rem;">In Progress</div>
-			<div style="font-weight: bold; margin-right: 5rem;">Created 2015/01/01</div>
-		</div> -->
-
-
-
-
-		
-
-	</div>
-</md-virtual-repeat-container>
+      </div>
+    </md-virtual-repeat-container>
 </md-content>
 
 
