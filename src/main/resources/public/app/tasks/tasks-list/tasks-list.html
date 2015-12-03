@@ -1,4 +1,12 @@
 <div style="height: 10%;" layout-align="end center" layout="row">
+
+	<md-input-container flex  style="margin-left: 1rem; margin-top: 1rem;">
+	  <label>Search</label>
+      <input type="text" id="search" ng-model="searchCriteria" style="width: 500px;" ng-keypress="onKeyPress($event)" >
+	</md-input-container>  
+
+	<md-button class="md-raised md-primary" ng-click="onSettings($event)">{{'settings' | translate}}</md-button>
+
 	<md-button class="md-raised md-primary" ng-click="onAdd($event)">{{'add' | translate}}</md-button>
 </div>
 <md-content layout="column" style="height: 90%;">
@@ -7,8 +15,6 @@
       <div md-virtual-repeat="item in infiniteItems" md-on-demand
           class="repeated-item" flex style="padding: 0.2rem; padding-top: 0.8rem; padding-left: 1rem; padding-right: 1rem;" layout="column">
 		<div layout="row">
-	
-
 			<div layout="column" flex=20>
 				<div layout="row">
 					<div style="font-weight: bold; margin-right: 5rem; margin-bottom: 0.3rem;" flex=10>Project:
