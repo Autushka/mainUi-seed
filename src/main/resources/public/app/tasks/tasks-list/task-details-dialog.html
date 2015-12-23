@@ -1,4 +1,5 @@
-<md-dialog ng-cloak style="width: 60%;">
+<md-dialog  style="width: 100%; height: 100%;">
+  <form>
     <md-toolbar>
       <div class="md-toolbar-tools">
         <h2>{{popupHeader}}</h2>
@@ -9,8 +10,7 @@
       </div>
     </md-toolbar>
     <md-dialog-content>
-
-        <div class="md-dialog-content">
+        <div class="md-dialog-content" layout="column">
           <md-input-container flex>
             <label>Project</label>
             <md-select ng-model="entry.project">
@@ -43,10 +43,7 @@
             <textarea ng-model="entry.description" columns="1" ></textarea>
           </md-input-container>
         </div> 
-             
-
     </md-dialog-content>
-
     <md-dialog-actions layout="row" layout-align="center center" style="order:2;">
       <md-button ng-click="returnEntry()">
        Save
@@ -55,5 +52,6 @@
         Cancel
       </md-button>
     </md-dialog-actions>  
+  </form>
 </md-dialog>
 

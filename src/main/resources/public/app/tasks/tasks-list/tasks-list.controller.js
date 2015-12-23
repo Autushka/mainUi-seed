@@ -3,152 +3,170 @@
 var documentsModule = require('../_index');
 var url = require('url');
 
-function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $window, $mdDialog, $mdMedia) {
-
-    $scope.entries = [{
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
+function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $window, $mdDialog, $mdMedia, tasksService) {
+    $scope.selectedSortingCriterias = [{
+        fieldName: "project (asc)",
+        field: "project",
+        selected: false,
+        direction: 'asc'
     }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
+        fieldName: "type (asc)",
+        field: "type",
+        selected: false,
+        direction: 'asc'
     }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
+        fieldName: "status (asc)",
+        field: "status",
+        selected: false,
+        direction: 'asc'
     }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
-    }, {
-        project: "Personal",
-        type: "Task",
-        status: "Open",
-        description: "Initial task...",
-        created: "2015/01/01"
+        fieldName: "created (desc)",
+        field: "createdAt",
+        selected: false,
+        direction: 'desc'
     }];
 
-    $scope.infiniteItems = {
-        numLoaded_: 0,
-        toLoad_: 0,
-        // Required.
-        getItemAtIndex: function(index) {
-            if (index > this.numLoaded_) {
-                this.fetchMoreItems_(index);
-                return null;
-            }
-            return $scope.entries[index];
-        },
-        // Required.
-        // For infinite scroll behavior, we always return a slightly higher
-        // number than the previously loaded items.
-        getLength: function() {
-            return this.numLoaded_ + 5;
-        },
-        fetchMoreItems_: function(index) {
-            if (this.toLoad_ < index) {
-                this.toLoad_ += 20; //should be dinamic based on the page size...
+    $scope.availableSortingCriterias = [{
+        fieldName: "created (asc)",
+        field: "createdAt",
+        selected: false,
+        direction: 'asc'
+    }, {
+        fieldName: "project (desc)",
+        field: "project",
+        selected: false,
+        direction: 'desc'
+    }, {
+        fieldName: "type (desc)",
+        field: "type",
+        selected: false,
+        direction: 'desc'
+    }, {
+        fieldName: "status (desc)",
+        field: "status",
+        selected: false,
+        direction: 'desc'
+    }];
 
-                // angular.bind(this, function() {
-                //     this.numLoaded_ = this.toLoad_;
+    $scope.appliedFilters = {};
 
-                // });
-
-                $timeout(angular.noop, 300).then(angular.bind(this, function() {
-                    this.numLoaded_ = this.toLoad_;
-
-                }));
-            }
+    var DynamicItems = function() {
+        this.loadedPages = {};
+        this.numItems = 0;
+        this.PAGE_SIZE = 20;
+        this.fetchNumItems_();
+    };
+    // Required.
+    DynamicItems.prototype.getItemAtIndex = function(index) {
+        var pageNumber = Math.floor(index / this.PAGE_SIZE);
+        var page = this.loadedPages[pageNumber];
+        if (page) {
+            return page[index % this.PAGE_SIZE];
+        } else if (page !== null) {
+            this.fetchPage_(pageNumber);
         }
     };
+    // Required.
+    DynamicItems.prototype.getLength = function() {
+        return this.numItems;
+    };
+    DynamicItems.prototype.fetchPage_ = function(pageNumber) {
+        // Set the page to null so we know it is already being fetched.
+        this.loadedPages[pageNumber] = null;
+        // For demo purposes, we simulate loading more items with a timed
+        // promise. In real code, this function would likely contain an
+        // $http request.
+        var sortingCriterias = [];
+        if ($scope.selectedSortingCriterias.length) {
+            for (var i = 0; i < $scope.selectedSortingCriterias.length; i++) {
+                sortingCriterias.push($scope.selectedSortingCriterias[i].field + "," + $scope.selectedSortingCriterias[i].direction);
+            }
+        }
+
+        var getTasksParams = {
+            size: this.PAGE_SIZE,
+            page: pageNumber,
+            sort: sortingCriterias,
+            description: $scope.searchCriteria
+        };
+
+        if (!angular.equals($scope.appliedFilters, {})) {
+            for (var property in $scope.appliedFilters) {
+                if ($scope.appliedFilters.hasOwnProperty(property)) {
+                    var filterValues = [];
+                    for (var i = 0; i < $scope.appliedFilters[property].length; i++) {
+                        filterValues.push($scope.appliedFilters[property][i]);
+                    }
+
+                    getTasksParams[property] = filterValues;
+                }
+            }
+
+        }
+
+        tasksService.getTasks(getTasksParams).then(angular.bind(this, function(data) {
+            this.loadedPages[pageNumber] = [];
+            var pageOffset = pageNumber * this.PAGE_SIZE;
+            for (var i = 0; i < data.content.length; i++) {
+                this.loadedPages[pageNumber].push(data.content[i]);
+            }
+        }));
+    };
+    DynamicItems.prototype.fetchNumItems_ = function() {
+        var getTasksParams = {
+            size: 1,
+            page: 1,
+            description: $scope.searchCriteria
+        };
+
+        if (!angular.equals($scope.appliedFilters, {})) {
+            for (var property in $scope.appliedFilters) {
+                if ($scope.appliedFilters.hasOwnProperty(property)) {
+                    var filterValues = [];
+                    for (var i = 0; i < $scope.appliedFilters[property].length; i++) {
+                        filterValues.push($scope.appliedFilters[property][i]);
+                    }
+
+                    getTasksParams[property] = filterValues;
+                }
+            }
+        }
+
+        tasksService.getTasks(getTasksParams).then(angular.bind(this, function(data) {
+            this.numItems = data.totalElements;
+        }));
+    };
+
+    var reloadEntries = function() {
+        $scope.entries = new DynamicItems();
+    };
+
+    reloadEntries();
+    var getEntyByIndex = function(index) {
+        var pageNumber = Math.floor(index / $scope.entries.PAGE_SIZE);
+        var itemNumber = index % $scope.entries.PAGE_SIZE;
+
+        return $scope.entries.loadedPages[pageNumber][itemNumber];
+    };
+    /*    var changeEntryByIndex = function(index, newEntry) {
+        var pageNumber = Math.floor(index / $scope.entries.PAGE_SIZE);
+        var itemNumber = index % $scope.entries.PAGE_SIZE;
+
+        $scope.entries.loadedPages[pageNumber][itemNumber] = newEntry;
+    };*/
+    /*    var removeEntyByIndex = function(index) {
+        var pageNumber = Math.floor(index / $scope.entries.PAGE_SIZE);
+        var itemNumber = index % $scope.entries.PAGE_SIZE;
+
+        $scope.entries.loadedPages[pageNumber].splice(itemNumber, 1);
+    };   */
 
     $scope.isOpen = false;
 
     var showTaskDetailsDialog = function(event, entry, index) {
         $mdDialog.show({
             controller: DialogController,
-            templateUrl: 'app/tasks/tasks-list/task-details-dialog.html',
+            templateUrl: APP_SETTINGS.contextPrefix + '/app/tasks/tasks-list/task-details-dialog.html',
             parent: angular.element(document.body),
             targetEvent: event,
             clickOutsideToClose: true,
@@ -161,16 +179,29 @@ function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $wi
             .then(function(dialogReturns) {
                 if (dialogReturns.index === undefined || dialogReturns.index === null) {
                     var creationDate = new Date();
-                    dialogReturns.entry.created = creationDate.getFullYear() + '-' + creationDate.getMonth() + '-' + creationDate.getDate();
-                    $scope.entries.unshift(angular.copy(dialogReturns.entry));
-                } else {
-                    $scope.entries[index] = angular.copy(dialogReturns.entry);
-                }
+                    tasksService.createTask({
+                        payload: dialogReturns.entry
+                    }).then(function() {
+                        //$scope.entries.unshift(angular.copy(dialogReturns.entry));
+                        reloadEntries();
+                    });
 
-                // $scope.status = 'You said the information was "' + answer + '".';
-            }, function() {
-                // $scope.status = 'You cancelled the dialog.';
-            });
+                } else {
+                    delete dialogReturns.entry['createdByUser'];
+                    delete dialogReturns.entry['createdAt'];
+                    delete dialogReturns.entry['modifiedByUser'];
+                    delete dialogReturns.entry['modifiedAt'];
+
+                    tasksService.changeTask({
+                        guid: dialogReturns.entry.taskGuid,
+                        payload: angular.copy(dialogReturns.entry)
+                    }).then(angular.bind(this, function(data) {
+                        reloadEntries();
+                        // changeEntryByIndex(dialogReturns.index, angular.copy(dialogReturns.entry));
+                    }));
+
+                }
+            }, function() {});
         $scope.$watch(function() {
             return $mdMedia('sm');
         }, function(sm) {
@@ -181,7 +212,7 @@ function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $wi
     var showGridSettingsDialog = function(event, selectedSortingCriterias, availableSortingCriterias, appliedFilters) {
         $mdDialog.show({
             controller: GridSettingsDialogController,
-            templateUrl: 'app/tasks/tasks-list/grid-settings-dialog.html',
+            templateUrl: APP_SETTINGS.contextPrefix + '/app/tasks/tasks-list/grid-settings-dialog.html',
             parent: angular.element(document.body),
             targetEvent: event,
             clickOutsideToClose: true,
@@ -193,9 +224,24 @@ function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $wi
             }
         })
             .then(function(dialogReturns) {
-                $scope.selectedSortingCriterias = dialogReturns.selectedSortingCriterias;
-                $scope.availableSortingCriterias = dialogReturns.availableSortingCriterias;
-                $scope.appliedFilters = dialogReturns.appliedFilters;
+                var reloadNeeded = false;
+                if (!angular.equals($scope.selectedSortingCriterias, dialogReturns.selectedSortingCriterias)) {
+                    $scope.selectedSortingCriterias = dialogReturns.selectedSortingCriterias;
+                    reloadNeeded = true;
+                }
+                if (!angular.equals($scope.availableSortingCriterias, dialogReturns.availableSortingCriterias)) {
+                    $scope.availableSortingCriterias = dialogReturns.availableSortingCriterias;
+                    reloadNeeded = true;
+                }
+                if (!angular.equals($scope.appliedFilters, dialogReturns.appliedFilters)) {
+                    $scope.appliedFilters = dialogReturns.appliedFilters;
+                    reloadNeeded = true;
+                }
+
+                if (reloadNeeded) {
+                    reloadEntries();
+                }
+
                 // if (dialogReturns.index === undefined || dialogReturns.index === null) {
                 //     var creationDate = new Date();
                 //     dialogReturns.entry.created = creationDate.getFullYear() + '-' + creationDate.getMonth() + '-' + creationDate.getDate();
@@ -219,30 +265,28 @@ function TasksListCtrl($scope, $timeout, $http, APP_SETTINGS, globalService, $wi
         showTaskDetailsDialog(event);
     };
 
-    $scope.selectedSortingCriterias = [];
-    $scope.availableSortingCriterias = [];
-    $scope.appliedFilters = {};
-
     $scope.onSettings = function(event) {
         showGridSettingsDialog(event, $scope.selectedSortingCriterias, $scope.availableSortingCriterias, $scope.appliedFilters);
     };
 
     $scope.onEdit = function(event, index) {
-        showTaskDetailsDialog(event, $scope.entries[index], index);
+        showTaskDetailsDialog(event, getEntyByIndex(index), index);
     };
 
     $scope.onDelete = function(index) {
-        $scope.entries.splice(index, 1);
+        var getEntryByIndex = getEntyByIndex(index);
+
+        tasksService.deleteTask({
+            guid: getEntryByIndex.taskGuid
+        }).then(angular.bind(this, function() {
+            reloadEntries();
+        }));
     };
 
     $scope.onKeyPress = function(event) {
         if (event.keyCode === 13) {
-            $scope.loadTasks();
+            reloadEntries();
         }
-    };
-
-    $scope.loadTasks = function() {
-
     };
 }
 
@@ -265,11 +309,11 @@ function DialogController($scope, $mdDialog, entry, index) {
     }];
 
     $scope.statuses = [{
-        description: "Open"
+        description: "1. Open"
     }, {
-        description: "In Progress"
+        description: "2. In Progress"
     }, {
-        description: "Done"
+        description: "3. Done"
     }];
 
     $scope.projects = [{
@@ -292,7 +336,7 @@ function DialogController($scope, $mdDialog, entry, index) {
             });
         } else {
             $mdDialog.hide({
-                entry: $scope.entry
+                // entry: $scope.entry
             });
         }
     };
@@ -302,7 +346,10 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
     if (!angular.equals(appliedFilters, {})) {
         $scope.appliedFilters = angular.copy(appliedFilters);
     } else {
-        $scope.appliedFilters = {};
+        $scope.appliedFilters = {
+            /*            createdFrom: new Date(),
+            createdTo: new Date()*/
+        };
     }
 
     $scope.types = [{
@@ -312,11 +359,11 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
     }];
 
     $scope.statuses = [{
-        description: "Open"
+        description: "1. Open"
     }, {
-        description: "In Progress"
+        description: "2. In Progress"
     }, {
-        description: "Done"
+        description: "3. Done"
     }];
 
     $scope.projects = [{
@@ -328,43 +375,52 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
     $scope.popupHeader = "Grid settings";
 
     if (!selectedSortingCriterias.length) {
-        $scope.selectedSortingCriterias = [];
+        $scope.selectedSortingCriterias = [{
+            fieldName: "project (asc)",
+            field: "project",
+            selected: false,
+            direction: 'asc'
+        }, {
+            fieldName: "type (asc)",
+            field: "type",
+            selected: false,
+            direction: 'asc'
+        }, {
+            fieldName: "status (asc)",
+            field: "status",
+            selected: false,
+            direction: 'asc'
+        }, {
+            fieldName: "created (desc)",
+            field: "createdAt",
+            selected: false,
+            direction: 'desc'
+        }];
     } else {
         $scope.selectedSortingCriterias = selectedSortingCriterias;
     }
 
     if (!availableSortingCriterias.length) {
         $scope.availableSortingCriterias = [{
-            fieldName: "project (asc)",
-            selected: false
-        }, {
-            fieldName: "type (asc)",
-            field: "type",
-            selected: false
-        }, {
-            fieldName: "status (asc)",
-            field: "status",
-            selected: false
-        }, {
             fieldName: "created (asc)",
-            field: "created",
-            selected: false
+            field: "createdAt",
+            selected: false,
+            direction: 'asc'
         }, {
             fieldName: "project (desc)",
             field: "project",
-            selected: false
+            selected: false,
+            direction: 'desc'
         }, {
             fieldName: "type (desc)",
             field: "type",
-            selected: false
+            selected: false,
+            direction: 'desc'
         }, {
             fieldName: "status (desc)",
             field: "status",
-            selected: false
-        }, {
-            fieldName: "created (desc)",
-            field: "created",
-            selected: false
+            selected: false,
+            direction: 'desc'
         }];
     } else {
         $scope.availableSortingCriterias = availableSortingCriterias;
@@ -416,7 +472,7 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
     $scope.onAddSorting = function() {
         $scope.availableSortingCriterias[$scope.selectedAvailableSortingCriteriaIndex].selected = false;
 
-        $scope.selectedSortingCriterias.unshift($scope.availableSortingCriterias[$scope.selectedAvailableSortingCriteriaIndex]);
+        $scope.selectedSortingCriterias.push($scope.availableSortingCriterias[$scope.selectedAvailableSortingCriteriaIndex]);
         $scope.availableSortingCriterias.splice($scope.selectedAvailableSortingCriteriaIndex, 1);
 
         $scope.isAddSortingCriteriaDisabled = true;
@@ -426,24 +482,12 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
     $scope.onRemoveSorting = function() {
         $scope.selectedSortingCriterias[$scope.selectedSelectedSortingCriteriaIndex].selected = false;
 
-        $scope.availableSortingCriterias.unshift($scope.selectedSortingCriterias[$scope.selectedSelectedSortingCriteriaIndex]);
+        $scope.availableSortingCriterias.push($scope.selectedSortingCriterias[$scope.selectedSelectedSortingCriteriaIndex]);
         $scope.selectedSortingCriterias.splice($scope.selectedSelectedSortingCriteriaIndex, 1);
 
         $scope.isRemoveSortingCriteriaDisabled = true;
         $scope.selectedSelectedSortingCriteriaIndex = -1;
     };
-
-    /*    $scope.onSelectSortingCriteria = function(index, listId) {
-        if (listId === 'available') {
-            $scope.availableSortingCriterias[index].selected = !$scope.availableSortingCriterias[index].selected;
-
-            for (var i = 0; i < $scope.availableSortingCriterias.length; i++) {
-                if (i !== index) {
-                    $scope.availableSortingCriterias[i].selected = false;
-                }
-            }
-        }
-    };*/
 
     $scope.returnEntry = function() {
         $mdDialog.hide({
@@ -451,15 +495,5 @@ function GridSettingsDialogController($scope, $mdDialog, selectedSortingCriteria
             availableSortingCriterias: $scope.availableSortingCriterias,
             appliedFilters: $scope.appliedFilters
         });
-        // if (index !== undefined || index !== null) {
-        //     $mdDialog.hide({
-        //         entry: $scope.entry,
-        //         index: index
-        //     });
-        // } else {
-        //     $mdDialog.hide({
-        //         entry: $scope.entry
-        //     });
-        // }
     };
 }
